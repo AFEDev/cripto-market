@@ -43,7 +43,8 @@
                 type="text"
                 name="wallet"
                 id="wallet"
-                class="block w-full pr-10 border-gray-300 text-gray-900 focus:outline-none focus:ring-gray-500 focus:border-gray-500 sm:text-sm rounded-md"
+                class="px-2 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-gray-200"
+                :class="showError ? 'border-red-500' : 'border-gray-300'"
                 placeholder="DOGE, BTC, etc..."
               />
             </div>
@@ -88,7 +89,70 @@
       </section>
 
       <template v-if="tickers.length">
-        <hr class="w-full border-t border-gray-600 my-4" />
+        <hr class="w-full border-t border-gray-600 my-2" />
+        <div class="flex flex-col md:flex-row">
+          <div class="py-4">
+            <label
+              for="filter"
+              class="text-gray-700 select-none font-medium px-2"
+              >Filter</label
+            >
+
+            <input
+              id="filter"
+              type="text"
+              name="filter"
+              placeholder="Text..."
+              class="px-2 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-200"
+            />
+          </div>
+          <div class="flex flex-row">
+            <button
+              @click="add"
+              type="button"
+              class="my-4 mx-3 inline-flex items-center px-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            >
+              <!-- Heroicon name: solid/mail -->
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M11 15l-3-3m0 0l3-3m-3 3h8M3 12a9 9 0 1118 0 9 9 0 01-18 0z"
+                />
+              </svg>
+            </button>
+            <button
+              @click="add"
+              type="button"
+              class="my-4 mx-3 inline-flex items-center py-2 px-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+            >
+              <!-- Heroicon name: solid/mail -->
+
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <hr class="w-full border-t border-gray-600 my-2" />
         <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
           <div
             v-for="t in tickers"
