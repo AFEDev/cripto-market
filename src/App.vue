@@ -99,6 +99,8 @@
             >
 
             <input
+              v-model="filter"
+              @input="filteredList"
               id="filter"
               type="text"
               name="filter"
@@ -131,7 +133,8 @@
             <button
               @click="add"
               type="button"
-              class="my-4 mx-3 inline-flex items-center py-2 px-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+              class="disabled:opacity-75 my-4 mx-3 inline-flex items-center py-2 px-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+              disabled
             >
               <!-- Heroicon name: solid/mail -->
 
@@ -155,7 +158,7 @@
         <hr class="w-full border-t border-gray-600 my-2" />
         <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
           <div
-            v-for="t in tickers"
+            v-for="t in filteredTickers()"
             :key="t.name"
             @click="select(t)"
             :class="{
@@ -254,6 +257,7 @@ export default {
       allTickers: [],
       searchResult: [],
       errorText: "",
+      filter: "",
     };
   },
 
@@ -286,6 +290,12 @@ export default {
   },
 
   methods: {
+    filteredTickers() {
+      return this.tickers.filter((ticker) =>
+        ticker.name.toLowerCase().includes(this.filter.toLowerCase())
+      );
+    },
+
     add() {
       if (this.ticker === "") {
         this.errorText = "Enter ticker";
@@ -309,6 +319,7 @@ export default {
       };
 
       this.tickers.push(currentTicker);
+      this.filter = "";
 
       localStorage.setItem("cryptolist", JSON.stringify(this.tickers));
 
