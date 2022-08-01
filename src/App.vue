@@ -100,7 +100,7 @@
 
             <input
               v-model="filter"
-              @input="filteredList"
+              @input="page = 1"
               id="filter"
               type="text"
               name="filter"
@@ -110,9 +110,10 @@
           </div>
           <div class="flex flex-row">
             <button
-              @click="add"
+              @click="page = page - 1"
               type="button"
-              class="my-4 mx-3 inline-flex items-center px-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+              class="disabled:opacity-50 my-4 mx-3 inline-flex items-center px-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+              :disabled="page === 1"
             >
               <!-- Heroicon name: solid/mail -->
               <svg
@@ -130,11 +131,14 @@
                 />
               </svg>
             </button>
+            <p class="text-gray-700 select-none font-medium px-2 my-6">
+              {{ page }} / {{ totalPages }}
+            </p>
             <button
-              @click="add"
+              @click="page = page + 1"
               type="button"
               class="disabled:opacity-75 my-4 mx-3 inline-flex items-center py-2 px-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-              disabled
+              :disabled="page === totalPages"
             >
               <!-- Heroicon name: solid/mail -->
 
@@ -258,10 +262,24 @@ export default {
       searchResult: [],
       errorText: "",
       filter: "",
+      page: 1,
+      totalPages: true,
     };
   },
 
-  created: function () {
+  created() {
+    const windowData = Object.fromEntries(
+      new URL(window.location).searchParams.entries()
+    );
+
+    if (windowData.filter) {
+      this.filter = windowData.filter;
+    }
+
+    if (windowData.page) {
+      this.page = windowData.page;
+    }
+
     const tickersData = localStorage.getItem("cryptolist");
     if (tickersData) {
       this.tickers = JSON.parse(tickersData);
@@ -291,9 +309,15 @@ export default {
 
   methods: {
     filteredTickers() {
-      return this.tickers.filter((ticker) =>
+      const start = (this.page - 1) * 6;
+      const end = this.page * 6;
+      const filteredTickers = this.tickers.filter((ticker) =>
         ticker.name.toLowerCase().includes(this.filter.toLowerCase())
       );
+
+      this.totalPages = Math.ceil(filteredTickers.length / 6);
+
+      return filteredTickers.slice(start, end);
     },
 
     add() {
@@ -368,7 +392,7 @@ export default {
     subscribeToUpdate(tickerName) {
       setInterval(async () => {
         const f = await fetch(
-          `https://min-api.cryptocompare.com/data/price?fsym=${tickerName}&tsyms=EUR&api_key=ce3fd966e7a1d10d65f907b20bf000552158fd3ed1bd614110baa0ac6cb57a7e`
+          `https://min-api.cryptocompare.com/data/price?fsym=${tickerName}&tsyms=EUR&api_key=${process.env.VUE_APP_MY_API_KEY}`
         );
         const data = await f.json();
 
@@ -380,6 +404,15 @@ export default {
           this.graph.push(data.EUR);
         }
       }, 5000);
+    },
+  },
+  watch: {
+    filter() {
+      window.history.pushState(
+        null,
+        document.title,
+        `${window.location.pathname}?filter=${this.filter}&page=${this.page}`
+      );
     },
   },
 };
