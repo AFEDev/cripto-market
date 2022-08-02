@@ -162,11 +162,11 @@
         <hr class="w-full border-t border-gray-600 my-2" />
         <dl class="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
           <div
-            v-for="t in filteredTickers()"
+            v-for="t in paginatedTickers"
             :key="t.name"
             @click="select(t)"
             :class="{
-              'border-2': sel === t,
+              'border-2': selectedTicker === t,
             }"
             class="bg-white overflow-hidden shadow rounded-lg border-purple-800 border-solid cursor-pointer"
           >
@@ -202,20 +202,20 @@
         <hr class="w-full border-t border-gray-600 my-4" />
       </template>
 
-      <section v-if="sel" class="relative">
+      <section v-if="selectedTicker" class="relative">
         <h3 class="text-lg leading-6 font-medium text-gray-900 my-8">
-          {{ sel.name }} - EUR
+          {{ selectedTicker.name }} - EUR
         </h3>
         <div class="flex items-end border-gray-600 border-b border-l h-64">
           <div
-            v-for="(bar, idx) in normalizeGraph()"
+            v-for="(bar, idx) in normalizedGraph"
             :key="idx"
             :style="{ height: `${bar}%` }"
             class="bg-purple-600 border w-10"
           ></div>
         </div>
         <button
-          @click="sel = null"
+          @click="selectedTicker = null"
           type="button"
           class="absolute top-0 right-0"
         >
@@ -256,14 +256,13 @@ export default {
       showError: false,
       ticker: "",
       tickers: [],
-      sel: null,
+      selectedTicker: null,
       graph: [],
       allTickers: [],
       searchResult: [],
       errorText: "",
       filter: "",
       page: 1,
-      totalPages: true,
     };
   },
 
@@ -306,20 +305,50 @@ export default {
         console.log(error);
       });
   },
-
-  methods: {
-    filteredTickers() {
-      const start = (this.page - 1) * 6;
-      const end = this.page * 6;
-      const filteredTickers = this.tickers.filter((ticker) =>
-        ticker.name.toLowerCase().includes(this.filter.toLowerCase())
-      );
-
-      this.totalPages = Math.ceil(filteredTickers.length / 6);
-
-      return filteredTickers.slice(start, end);
+  computed: {
+    startIndex() {
+      return (this.page - 1) * 6;
     },
 
+    endIndex() {
+      return this.page * 6;
+    },
+
+    filteredTickers() {
+      return this.tickers.filter((ticker) =>
+        ticker.name.toLowerCase().includes(this.filter.toLowerCase())
+      );
+    },
+
+    paginatedTickers() {
+      return this.filteredTickers.slice(this.startIndex, this.endIndex);
+    },
+
+    totalPages() {
+      return Math.ceil(this.filteredTickers.length / 6);
+    },
+
+    normalizedGraph() {
+      const maxValue = Math.max(...this.graph);
+      const minValue = Math.min(...this.graph);
+
+      if (maxValue === minValue) {
+        return this.graph.map(() => 50);
+      }
+
+      return this.graph.map(
+        (price) => 5 + ((price - minValue) * 95) / (maxValue - minValue)
+      );
+    },
+
+    pageStateOptions() {
+      return {
+        filter: this.filter,
+        page: this.page,
+      };
+    },
+  },
+  methods: {
     add() {
       if (this.ticker === "") {
         this.errorText = "Enter ticker";
@@ -329,8 +358,6 @@ export default {
       const tickerAdded = this.tickers.filter((t) => {
         return t.name.toLowerCase() === this.ticker.toLowerCase();
       });
-
-      console.log(tickerAdded);
 
       if (tickerAdded.length) {
         this.errorText = "Ticker already exist";
@@ -342,10 +369,8 @@ export default {
         price: "-",
       };
 
-      this.tickers.push(currentTicker);
+      this.tickers = [...this.tickers, currentTicker];
       this.filter = "";
-
-      localStorage.setItem("cryptolist", JSON.stringify(this.tickers));
 
       this.subscribeToUpdate(currentTicker.name);
 
@@ -353,21 +378,16 @@ export default {
     },
 
     select(ticker) {
-      this.sel = ticker;
-      this.graph = [];
+      this.selectedTicker = ticker;
     },
 
     handleDelete(tickerToRemove) {
       this.tickers = this.tickers.filter((t) => t !== tickerToRemove);
+      if (this.selectedTicker === tickerToRemove) {
+        this.selectedTicker = null;
+      }
     },
 
-    normalizeGraph() {
-      const maxValue = Math.max(...this.graph);
-      const minValue = Math.min(...this.graph);
-      return this.graph.map(
-        (price) => 5 + ((price - minValue) * 95) / (maxValue - minValue)
-      );
-    },
     search() {
       this.showError = false;
       let matches = 0;
@@ -385,10 +405,12 @@ export default {
         this.searchResult = [];
       }
     },
+
     selectSearchResult(result) {
       this.ticker = result.Symbol;
       this.searchResult = [];
     },
+
     subscribeToUpdate(tickerName) {
       setInterval(async () => {
         const f = await fetch(
@@ -400,18 +422,36 @@ export default {
         this.tickers.find((t) => t.name === tickerName).price =
           data.EUR > 1 ? data.EUR.toFixed(2) : data.EUR.toPrecision(2);
 
-        if (this.sel?.name === tickerName) {
+        if (this.selectedTicker?.name === tickerName) {
           this.graph.push(data.EUR);
         }
       }, 5000);
     },
   },
   watch: {
+    selectedTicker() {
+      this.graph = [];
+    },
+
+    tickers() {
+      localStorage.setItem("cryptolist", JSON.stringify(this.tickers));
+    },
+
+    paginatedTickers() {
+      if (this.paginatedTickers.length === 0 && this.page > 1) {
+        this.page -= 1;
+      }
+    },
+
     filter() {
+      this.page = 1;
+    },
+
+    pageStateOptions(value) {
       window.history.pushState(
         null,
         document.title,
-        `${window.location.pathname}?filter=${this.filter}&page=${this.page}`
+        `${window.location.pathname}?filter=${value.filter}&page=${value.page}`
       );
     },
   },
