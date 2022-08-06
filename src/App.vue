@@ -113,7 +113,7 @@
               @click="page = page - 1"
               type="button"
               class="disabled:opacity-50 my-4 mx-3 inline-flex items-center px-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-              :disabled="page === 1"
+              :disabled="page <= 1"
             >
               <!-- Heroicon name: solid/mail -->
               <svg
@@ -137,8 +137,8 @@
             <button
               @click="page = page + 1"
               type="button"
-              class="disabled:opacity-75 my-4 mx-3 inline-flex items-center py-2 px-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-              :disabled="page === totalPages"
+              class="disabled:opacity-50 my-4 mx-3 inline-flex items-center py-2 px-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+              :disabled="page >= totalPages"
             >
               <!-- Heroicon name: solid/mail -->
 
@@ -172,7 +172,7 @@
           >
             <div class="px-4 py-5 sm:p-6 text-center">
               <dt class="text-sm font-medium text-gray-500 truncate">
-                {{ t.name }} - USD
+                {{ t.name }} - EUR
               </dt>
               <dd class="mt-1 text-3xl font-semibold text-gray-900">
                 {{ formatPrice(t.price) }}
@@ -247,7 +247,11 @@
 </template>
 
 <script>
-import { loadTickers } from "./api";
+import {
+  loadAllTickersList,
+  subscribeToTicker,
+  unsubscribeFromTicker,
+} from "./api";
 
 export default {
   name: "App",
@@ -268,7 +272,7 @@ export default {
     };
   },
 
-  created() {
+  async created() {
     const windowData = Object.fromEntries(
       new URL(window.location).searchParams.entries()
     );
@@ -282,29 +286,23 @@ export default {
     }
 
     const tickersData = localStorage.getItem("cryptolist");
+
     if (tickersData) {
       this.tickers = JSON.parse(tickersData);
+      this.tickers.forEach((ticker) => {
+        subscribeToTicker(ticker.name, (newPrice) => {
+          this.updateTicker(ticker.name, newPrice);
+        });
+      });
     }
 
-    setInterval(this.updateTickers, 5000);
+    // setInterval(this.updateTickers, 5000);
 
-    fetch("https://min-api.cryptocompare.com/data/all/coinlist?summary=true")
-      .then((response) => {
-        if (response.ok) {
-          this.loading = false;
-          return response.json();
-        }
-        throw new Error("Something went wrong");
-      })
-      .then((responseJson) => {
-        let arr = Object.entries(responseJson.Data);
-        for (let a of arr) {
-          this.allTickers.push(a[1]);
-        }
-      })
-      .catch((error) => {
-        console.log(error);
-      });
+    this.allTickers = await loadAllTickersList();
+
+    if (this.allTickers.length) {
+      this.loading = false;
+    }
   },
   computed: {
     startIndex() {
@@ -350,6 +348,17 @@ export default {
     },
   },
   methods: {
+    updateTicker(tickerName, price) {
+      this.tickers
+        .filter((t) => t.name === tickerName)
+        .forEach((t) => {
+          if (t === this.selectedTicker) {
+            this.graph.push(price);
+          }
+          t.price = price;
+        });
+    },
+
     formatPrice(price) {
       if (price === "-") {
         return price;
@@ -364,7 +373,7 @@ export default {
       }
 
       const tickerAdded = this.tickers.filter((t) => {
-        return t.name.toLowerCase() === this.ticker.toLowerCase();
+        return t.name.toUpperCase() === this.ticker.toUpperCase();
       });
 
       if (tickerAdded.length) {
@@ -373,14 +382,17 @@ export default {
       }
 
       const currentTicker = {
-        name: this.ticker,
+        name: this.ticker.toUpperCase(),
         price: "-",
       };
 
       this.tickers = [...this.tickers, currentTicker];
       this.filter = "";
-
       this.ticker = "";
+      this.searchResult = [];
+      subscribeToTicker(currentTicker.name, (newPrice) =>
+        this.updateTicker(currentTicker.name, newPrice)
+      );
     },
 
     select(ticker) {
@@ -392,6 +404,7 @@ export default {
       if (this.selectedTicker === tickerToRemove) {
         this.selectedTicker = null;
       }
+      unsubscribeFromTicker(tickerToRemove.name);
     },
 
     search() {
@@ -399,7 +412,7 @@ export default {
       let matches = 0;
       this.searchResult = this.allTickers.filter((name) => {
         if (
-          name.FullName.toLowerCase().includes(this.ticker.toLowerCase()) &&
+          name.FullName.toUpperCase().includes(this.ticker.toUpperCase()) &&
           matches < 4
         ) {
           matches++;
@@ -418,15 +431,16 @@ export default {
     },
 
     async updateTickers() {
-      if (!this.tickers.length) {
-        return;
-      }
-      const exchangeData = await loadTickers(this.tickers.map((t) => t.name));
-      console.log(exchangeData);
-      this.tickers.forEach((ticker) => {
-        const price = exchangeData[ticker.name.toUpperCase()];
-        ticker.price = price ?? "-";
-      });
+      // if (!this.tickers.length) {
+      //   return;
+      // }
+      // this.tickers.forEach((ticker) => {
+      //   const price = exchangeData[ticker.name.toUpperCase()];
+      //   ticker.price = price ?? "-";
+      //   if (ticker === this.selectedTicker) {
+      //     this.graph.push(price);
+      //   }
+      // });
     },
   },
   watch: {
