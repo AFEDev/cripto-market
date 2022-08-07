@@ -1,24 +1,54 @@
-const tickersHandlers = new Map();
+let tickersHandlers = new Map();
 const socket = new WebSocket(
   `wss://streamer.cryptocompare.com/v2?api_key=${process.env.VUE_APP_MY_API_KEY}`
 );
 
+let BTCpriceInEUR = 0;
 const AGGREGATE_INDEX = "5";
+const INVALID_SUB = "500";
+
+const bc = new BroadcastChannel("test_channel");
+
+// bc.postMessage(tickersHandlers);
+
+// bc.onmessage = (th) => {
+//   tickersHandlers = th;
+// };
 
 socket.addEventListener("message", (e) => {
-  console.log(e);
-  const {
+  let {
     TYPE: type,
     FROMSYMBOL: currency,
+    TOSYMBOL: currencyTo,
     PRICE: newPrice,
   } = JSON.parse(e.data);
+
   if (type !== AGGREGATE_INDEX || newPrice === undefined) {
+    if (type === INVALID_SUB) {
+      handleResponseError(e);
+      return;
+    }
     return;
   }
+
+  if (currency === "BTC") {
+    BTCpriceInEUR = newPrice;
+  }
+
+  if (currencyTo !== "EUR") {
+    newPrice *= BTCpriceInEUR;
+  }
+  bc.postMessage({ currency, newPrice });
 
   const handlers = tickersHandlers.get(currency) ?? [];
   handlers.forEach((fn) => fn(newPrice));
 });
+
+bc.onmessage = (m) => {
+  console.log(m.data.currency);
+  const handlers = tickersHandlers.get(m.data.currency) ?? [];
+  handlers.forEach((fn) => fn(m.data.newPrice));
+};
 
 //API method:
 
@@ -56,6 +86,21 @@ export const loadAllTickersList = () =>
       )
   );
 
+function handleResponseError(e) {
+  const { TYPE: type, PARAMETER: sendedParameter } = JSON.parse(e.data);
+
+  const sendedParameters = {
+    currencyTo: sendedParameter.split("~")[3],
+    currencyFrom: sendedParameter.split("~")[2],
+  };
+
+  if (sendedParameters.currencyTo === "BTC") {
+    return;
+  }
+
+  subscribeToTickerOnWs(sendedParameters.currencyFrom, "BTC");
+}
+
 function sendToWebSocket(message) {
   const stringifiedMessage = JSON.stringify(message);
 
@@ -73,17 +118,17 @@ function sendToWebSocket(message) {
   );
 }
 
-function subscribeToTickerOnWs(ticker) {
+function subscribeToTickerOnWs(ticker, currencyTo = "EUR") {
   sendToWebSocket({
     action: "SubAdd",
-    subs: [`5~CCCAGG~${ticker}~EUR`],
+    subs: [`5~CCCAGG~${ticker}~${currencyTo}`],
   });
 }
 
-function unsubscribeFromTickerOnWs(ticker) {
+function unsubscribeFromTickerOnWs(ticker, currencyTo = "EUR") {
   sendToWebSocket({
     action: "SubRemove",
-    subs: [`5~CCCAGG~${ticker}~EUR`],
+    subs: [`5~CCCAGG~${ticker}~${currencyTo}`],
   });
 }
 

@@ -167,6 +167,7 @@
             @click="select(t)"
             :class="{
               'border-2': selectedTicker === t,
+              'bg-red-200': t.price === '-',
             }"
             class="bg-white overflow-hidden shadow rounded-lg border-purple-800 border-solid cursor-pointer"
           >
@@ -206,12 +207,16 @@
         <h3 class="text-lg leading-6 font-medium text-gray-900 my-8">
           {{ selectedTicker.name }} - EUR
         </h3>
-        <div class="flex items-end border-gray-600 border-b border-l h-64">
+        <div
+          class="flex items-end border-gray-600 border-b border-l h-64"
+          ref="graph"
+        >
           <div
             v-for="(bar, idx) in normalizedGraph"
+            ref="graphElement"
             :key="idx"
-            :style="{ height: `${bar}%` }"
-            class="bg-purple-600 border w-10"
+            :style="{ height: `${bar}%`, width: `${graphElementWidth}px` }"
+            class="bg-purple-600 border"
           ></div>
         </div>
         <button
@@ -269,6 +274,7 @@ export default {
       errorText: "",
       filter: "",
       page: 1,
+      graphElementWidth: 38,
     };
   },
 
@@ -284,7 +290,6 @@ export default {
     if (windowData.page) {
       this.page = windowData.page;
     }
-
     const tickersData = localStorage.getItem("cryptolist");
 
     if (tickersData) {
@@ -304,6 +309,14 @@ export default {
       this.loading = false;
     }
   },
+  mounted() {
+    window.addEventListener("resize", this.calculateMaxGraphElements);
+  },
+
+  beforeUnmount() {
+    window.removeEventListener("resize", this.calculateMaxGraphElements);
+  },
+
   computed: {
     startIndex() {
       return (this.page - 1) * 6;
@@ -348,12 +361,24 @@ export default {
     },
   },
   methods: {
+    calculateMaxGraphElements() {
+      if (!this.$refs.graph) {
+        return;
+      }
+
+      this.maxGraphElements =
+        this.$refs.graph.clientWidth / this.graphElementWidth;
+    },
+
     updateTicker(tickerName, price) {
       this.tickers
         .filter((t) => t.name === tickerName)
         .forEach((t) => {
           if (t === this.selectedTicker) {
             this.graph.push(price);
+            if (this.graph.length > this.maxGraphElements) {
+              this.graph = this.graph.slice(1, this.maxGraphElements + 1);
+            }
           }
           t.price = price;
         });
@@ -446,6 +471,7 @@ export default {
   watch: {
     selectedTicker() {
       this.graph = [];
+      this.$nextTick().then(this.calculateMaxGraphElements);
     },
 
     tickers() {
