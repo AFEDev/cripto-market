@@ -45,7 +45,6 @@ socket.addEventListener("message", (e) => {
 });
 
 bc.onmessage = (m) => {
-  console.log(m.data.currency);
   const handlers = tickersHandlers.get(m.data.currency) ?? [];
   handlers.forEach((fn) => fn(m.data.newPrice));
 };
