@@ -9,7 +9,7 @@
       ref="graphRef"
     >
       <div
-        v-for="(bar, idx) in normalizedGraph"
+        v-for="(bar, idx) in normalizeGraph"
         :key="idx"
         :style="{ height: `${bar}%`, width: `${graphElementWidth}px` }"
         class="bg-purple-600 border"
@@ -42,12 +42,10 @@
 </template>
 
 <script>
+import { toRefs, reactive } from "vue";
+
 export default {
   props: {
-    allTickers: {
-      type: Array,
-      required: false,
-    },
     selectedTicker: {
       type: Object,
       required: false,
@@ -63,43 +61,52 @@ export default {
   },
 
   setup() {
+    let graph = reactive([]);
     return {
-      graph: [],
-      normalizedGraph: [],
-      graphElementWidth: 38,
+      graph,
+      graphElementWidth: 1,
     };
   },
 
   mounted() {
-    window.addEventListener("resize", this.fitGraphElements);
+    window.addEventListener("resize", this.calculateMaxGraphElements);
   },
 
   beforeUnmount() {
-    window.removeEventListener("resize", this.fitGraphElements);
+    window.removeEventListener("resize", this.calculateMaxGraphElements);
   },
 
   created() {
     this.$nextTick().then(this.calculateMaxGraphElements);
   },
 
-  computed: {},
-
-  methods: {
+  computed: {
     normalizeGraph() {
+      if (!this.graph.length) {
+        return;
+      }
+
+      console.log("this.maxGraphElements", this.maxGraphElements);
+
       const maxValue = Math.max(...this.graph);
       const minValue = Math.min(...this.graph);
+      console.log("length", this.graph.length);
+      console.log(minValue, maxValue);
 
       if (maxValue === minValue) {
         return this.graph.map(() => 50);
       }
 
       return this.graph.map(
-        (price) => 5 + ((price - minValue) * 95) / (maxValue - minValue)
+        (t) => 5 + ((t - minValue) * 95) / (maxValue - minValue)
       );
     },
+  },
 
+  methods: {
     closeGraph() {
       this.$emit("closeGraph");
+      this.graph = [];
     },
 
     calculateMaxGraphElements() {
@@ -111,35 +118,29 @@ export default {
     },
 
     fitGraphElements() {
-      this.calculateMaxGraphElements();
-      console.log(this.graph.length, this.maxGraphElements);
+      console.log("fitGraphElements");
+      let graph = this.graph.slice(
+        this.graph.length - this.maxGraphElements,
+        this.graph.length
+      );
 
-      if (this.graph.length > this.maxGraphElements) {
-        this.graph = this.graph.slice(
-          this.graph.length - this.maxGraphElements,
-          this.graph.length
-        );
-        this.normalizedGraph = this.normalizeGraph();
-      }
+      this.graph = graph;
+      console.log(graph);
+      console.log(this.graph);
+      // this.normalizedGraph = this.normalizeGraph();
     },
+
     updateGraph() {
       this.graph.push(this.selectedTicker.price);
 
       if (this.graph.length > this.maxGraphElements) {
-        this.graph = this.graph.slice(
-          this.graph.length - this.maxGraphElements,
-          this.graph.length
-        );
+        this.graph.shift();
       }
-
-      this.normalizedGraph = this.normalizeGraph();
+      // this.normalizedGraph = this.normalizeGraph();
     },
   },
 
   watch: {
-    "allTickers.length"(val) {
-      console.log("tickers", val);
-    },
     selectedTicker: {
       handler() {
         console.log("selected");

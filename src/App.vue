@@ -3,6 +3,12 @@
     <div class="container">
       <div class="w-full my-4"></div>
 
+      <ModalWindow
+        :modalContent="modalContent"
+        @close-modal="closeModal"
+        :openModal="openModal"
+      />
+
       <add-ticker @add-ticker="add" :tickers="tickers" />
 
       <template v-if="tickers.length">
@@ -124,7 +130,6 @@
         v-if="selectedTicker"
         :selected-ticker="selectedTicker"
         @close-graph="closeGraph"
-        :all-tickers="tickers"
       />
     </div>
   </div>
@@ -133,6 +138,7 @@
 <script>
 import AddTicker from "./components/AddTicker.vue";
 import TickerGraph from "./components/TickerGraph.vue";
+import ModalWindow from "./components/modalWindow/ModalWindow.vue";
 
 import { subscribeToTicker, unsubscribeFromTicker } from "./api";
 
@@ -142,6 +148,7 @@ export default {
   components: {
     AddTicker,
     TickerGraph,
+    ModalWindow,
   },
 
   data() {
@@ -150,17 +157,23 @@ export default {
       selectedTicker: null,
       filter: "",
       page: 1,
-      graph: [],
+      modalContent: {},
+      openModal: false,
     };
   },
 
-  // emits: {
-  //   closeGraph: {
-  //     type: Boolean,
-  //     required: false,
-  //     default: false,
-  //   },
-  // },
+  emits: {
+    closeGraph: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
+    closeModal: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
+  },
 
   async created() {
     const windowData = Object.fromEntries(
@@ -185,25 +198,9 @@ export default {
         });
       });
     }
-
-    // setInterval(this.updateTickers, 5000);
   },
 
   computed: {
-    normalizedGraph() {
-      console.log("normalizedGraph");
-      const maxValue = Math.max(...this.graph);
-      const minValue = Math.min(...this.graph);
-
-      if (maxValue === minValue) {
-        return this.graph.map(() => 50);
-      }
-
-      return this.graph.map(
-        (price) => 5 + ((price - minValue) * 95) / (maxValue - minValue)
-      );
-    },
-
     startIndex() {
       return (this.page - 1) * 6;
     },
@@ -233,28 +230,14 @@ export default {
       };
     },
   },
+
   methods: {
-    calculateMaxGraphElements() {
-      if (!this.$refs.graph) {
-        return;
-      }
-
-      this.maxGraphElements = this.$refs.graph.clientWidth / 38;
-    },
-
     updateTicker(tickerName, price) {
-      console.log("updateTicker");
-      this.tickers
-        .filter((t) => t.name === tickerName)
-        .forEach((t) => {
-          if (t === this.selectedTicker) {
-            this.graph.push(price);
-            while (this.graph.length > this.maxGraphElements) {
-              this.graph.shift();
-            }
-          }
+      this.tickers.map((t) => {
+        if (t.name === tickerName) {
           t.price = price;
-        });
+        }
+      });
     },
 
     formatPrice(price) {
@@ -287,24 +270,30 @@ export default {
         this.selectedTicker = null;
       }
       unsubscribeFromTicker(tickerToRemove.name);
+      this.showModal(tickerToRemove.name);
     },
 
     closeGraph() {
       this.selectedTicker = null;
-      this.graph = [];
     },
 
-    async updateTickers() {
-      // if (!this.tickers.length) {
-      //   return;
-      // }
-      // this.tickers.forEach((ticker) => {
-      //   const price = exchangeData[ticker.name.toUpperCase()];
-      //   ticker.price = price ?? "-";
-      //   if (ticker === this.selectedTicker) {
-      //     this.graph.push(price);
-      //   }
-      // });
+    closeModal() {
+      console.log("close m parent");
+      this.modalContent = null;
+      this.openModal = false;
+    },
+
+    showModal(tickerName) {
+      if (this.openModal) {
+        return;
+      }
+      this.modalContent = {
+        title: "Removed ticker",
+        content: `You removed ticker ${tickerName}`,
+      };
+
+      console.log("moda", this.modalContent);
+      this.openModal = true;
     },
   },
 
