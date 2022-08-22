@@ -64,7 +64,7 @@ export default {
     let graph = reactive([]);
     return {
       graph,
-      graphElementWidth: 1,
+      graphElementWidth: 32,
     };
   },
 
@@ -115,6 +115,11 @@ export default {
       }
       this.maxGraphElements =
         this.$refs.graphRef.clientWidth / this.graphElementWidth;
+      console.log(
+        "maxGraphElements",
+        this.$refs.graphRef.clientWidth,
+        this.graphElementWidth
+      );
     },
 
     fitGraphElements() {

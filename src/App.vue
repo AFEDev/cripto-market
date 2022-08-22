@@ -6,9 +6,21 @@
       <ModalWindow
         :modalContent="modalContent"
         @close-modal="closeModal"
-        :openModal="openModal"
-      />
-
+        :is-open="openModal"
+      >
+        <template #actions="{ emit: modalEmit }">
+          Enter
+          <input placeholder="ticker name" v-model="comfirmationText" />
+          &nbsp;
+          <button
+            class="disabled:opacity-50 bg-blue-300 enabled:hover:bg-gray-500 text-blue-700 font-semibold enabled:hover:text-white py-1 px-4 border border-blue-500 enabled:hover:border-transparent rounded"
+            @click="modalEmit('closeModal')"
+            :disabled="!isConfirmedTickerName"
+          >
+            Ok
+          </button>
+        </template>
+      </ModalWindow>
       <add-ticker @add-ticker="add" :tickers="tickers" />
 
       <template v-if="tickers.length">
@@ -35,7 +47,7 @@
             <button
               @click="page = page - 1"
               type="button"
-              class="disabled:opacity-50 my-4 mx-3 inline-flex items-center px-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+              class="disabled:opacity-50 my-4 mx-3 inline-flex items-center px-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 enabled:hover:bg-gray-700 transition-colors duration-300 enabled:focus:outline-none enabled:focus:ring-2 enabled:focus:ring-offset-2 enabled:focus:ring-gray-500"
               :disabled="page <= 1"
             >
               <!-- Heroicon name: solid/mail -->
@@ -104,7 +116,7 @@
             </div>
             <div class="w-full border-t border-gray-200"></div>
             <button
-              @click.stop="handleDelete(t)"
+              @click.stop="confirmDelete(t)"
               class="flex items-center justify-center font-medium w-full bg-gray-100 px-4 py-4 sm:px-6 text-md text-gray-500 hover:text-gray-600 hover:bg-gray-200 hover:opacity-20 transition-all focus:outline-none"
             >
               <svg
@@ -151,6 +163,8 @@ export default {
     ModalWindow,
   },
 
+  TICKERS_ON_PAGE: 6,
+
   data() {
     return {
       tickers: [],
@@ -159,6 +173,8 @@ export default {
       page: 1,
       modalContent: {},
       openModal: false,
+      comfirmationText: "",
+      tickerToRemove: "",
     };
   },
 
@@ -201,12 +217,16 @@ export default {
   },
 
   computed: {
+    isConfirmedTickerName() {
+      return this.comfirmationText === this.tickerToRemove.name;
+    },
+
     startIndex() {
-      return (this.page - 1) * 6;
+      return (this.page - 1) * this.$options.TICKERS_ON_PAGE;
     },
 
     endIndex() {
-      return this.page * 6;
+      return this.page * this.$options.TICKERS_ON_PAGE;
     },
 
     filteredTickers() {
@@ -220,7 +240,9 @@ export default {
     },
 
     totalPages() {
-      return Math.ceil(this.filteredTickers.length / 6);
+      return Math.ceil(
+        this.filteredTickers.length / this.$options.TICKERS_ON_PAGE
+      );
     },
 
     pageStateOptions() {
@@ -232,6 +254,21 @@ export default {
   },
 
   methods: {
+    confirmDelete(tickerToConfirm) {
+      if (this.openModal) {
+        return;
+      }
+
+      this.tickerToRemove = tickerToConfirm;
+
+      this.modalContent = {
+        title: "Removed ticker",
+        content: `You removed ticker ${tickerToConfirm.name}`,
+      };
+
+      this.openModal = true;
+    },
+
     updateTicker(tickerName, price) {
       this.tickers.map((t) => {
         if (t.name === tickerName) {
@@ -270,7 +307,6 @@ export default {
         this.selectedTicker = null;
       }
       unsubscribeFromTicker(tickerToRemove.name);
-      this.showModal(tickerToRemove.name);
     },
 
     closeGraph() {
@@ -278,22 +314,12 @@ export default {
     },
 
     closeModal() {
-      console.log("close m parent");
+      console.log("close");
       this.modalContent = null;
       this.openModal = false;
-    },
-
-    showModal(tickerName) {
-      if (this.openModal) {
-        return;
-      }
-      this.modalContent = {
-        title: "Removed ticker",
-        content: `You removed ticker ${tickerName}`,
-      };
-
-      console.log("moda", this.modalContent);
-      this.openModal = true;
+      this.handleDelete(this.tickerToRemove);
+      console.log(this.tickerToRemove);
+      this.tickerToRemove = "";
     },
   },
 
