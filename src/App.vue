@@ -9,8 +9,12 @@
         :is-open="openModal"
       >
         <template #actions>
-          Enter
-          <input placeholder="ticker name" v-model="comfirmationText" />
+          <p class="pt-1">Enter</p>
+          <input
+            class="bg-gray-100 border-b-2 border-blue-600 focus:border-transparent"
+            placeholder="ticker name"
+            v-model="comfirmationText"
+          />
           &nbsp;
           <button
             class="disabled:opacity-50 bg-blue-300 enabled:hover:bg-gray-500 text-blue-700 font-semibold enabled:hover:text-white py-1 px-4 border border-blue-500 enabled:hover:border-transparent rounded"

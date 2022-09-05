@@ -5,7 +5,7 @@
     @click="closeModal"
   >
     <div
-      class="bg-gray-100 rounded-lg w-1/2 border border-blue-500 overflow-hidden"
+      class="bg-gray-100 rounded-lg w-3/4 md:w-1/2 border border-blue-500 overflow-hidden"
       @click.stop
     >
       <div class="flex flex-col items-start">
@@ -29,7 +29,9 @@
           {{ modalContent.content }}
         </div>
         <hr />
-        <div class="flex flex-row justify-around w-full bg-gray-100 p-2">
+        <div
+          class="flex flex-col justify-around w-full bg-gray-100 p-2 md:flex-row md:mx-auto"
+        >
           <slot name="actions" :closeModal="closeModal"> </slot>
         </div>
       </div>
