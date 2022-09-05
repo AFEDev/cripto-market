@@ -42,12 +42,16 @@
 </template>
 
 <script>
-import { toRefs, reactive } from "vue";
+import { reactive } from "vue";
 
 export default {
   props: {
     selectedTicker: {
       type: Object,
+      required: false,
+    },
+    tickerPrice: {
+      type: Number,
       required: false,
     },
   },
@@ -86,12 +90,8 @@ export default {
         return;
       }
 
-      console.log("this.maxGraphElements", this.maxGraphElements);
-
       const maxValue = Math.max(...this.graph);
       const minValue = Math.min(...this.graph);
-      console.log("length", this.graph.length);
-      console.log(minValue, maxValue);
 
       if (maxValue === minValue) {
         return this.graph.map(() => 50);
@@ -109,49 +109,34 @@ export default {
       this.graph = [];
     },
 
+    updateGraph(price) {
+      this.graph.push(price);
+
+      while (this.graph.length > this.maxGraphElements) {
+        this.graph.shift();
+      }
+    },
+
     calculateMaxGraphElements() {
       if (!this.$refs.graphRef) {
         return;
       }
       this.maxGraphElements =
         this.$refs.graphRef.clientWidth / this.graphElementWidth;
-      console.log(
-        "maxGraphElements",
-        this.$refs.graphRef.clientWidth,
-        this.graphElementWidth
-      );
     },
 
     fitGraphElements() {
-      console.log("fitGraphElements");
-      let graph = this.graph.slice(
-        this.graph.length - this.maxGraphElements,
-        this.graph.length
-      );
-
-      this.graph = graph;
-      console.log(graph);
-      console.log(this.graph);
-      // this.normalizedGraph = this.normalizeGraph();
-    },
-
-    updateGraph() {
-      this.graph.push(this.selectedTicker.price);
-
-      if (this.graph.length > this.maxGraphElements) {
+      while (this.graph.length > this.maxGraphElements) {
         this.graph.shift();
       }
-      // this.normalizedGraph = this.normalizeGraph();
     },
   },
-
   watch: {
-    selectedTicker: {
-      handler() {
-        console.log("selected");
-        this.updateGraph();
-      },
-      deep: true,
+    tickerPrice(price) {
+      this.updateGraph(price);
+    },
+    selectedTicker() {
+      this.graph.length = 0;
     },
   },
 };

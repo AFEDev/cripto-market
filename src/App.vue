@@ -102,7 +102,7 @@
             @click="select(t)"
             :class="{
               'border-2': selectedTicker === t,
-              'bg-red-200': t.price === '-',
+              'bg-red-10    0': t.price === '-',
             }"
             class="bg-white overflow-hidden shadow rounded-lg border-purple-800 border-solid cursor-pointer"
           >
@@ -141,6 +141,7 @@
       <ticker-graph
         v-if="selectedTicker"
         :selected-ticker="selectedTicker"
+        :ticker-price="selectedTickerPrice"
         @close-graph="closeGraph"
       />
     </div>
@@ -168,6 +169,7 @@ export default {
   data() {
     return {
       tickers: [],
+      selectedTickerPrice: 0,
       selectedTicker: null,
       filter: "",
       page: 1,
@@ -259,11 +261,13 @@ export default {
         return;
       }
 
+      this.comfirmationText = "";
+
       this.tickerToRemove = tickerToConfirm;
 
       this.modalContent = {
         title: "Removed ticker",
-        content: `You removed ticker ${tickerToConfirm.name}`,
+        content: `You want to remove ticker ${tickerToConfirm.name} ?`,
       };
 
       this.openModal = true;
@@ -273,6 +277,9 @@ export default {
       this.tickers.map((t) => {
         if (t.name === tickerName) {
           t.price = price;
+        }
+        if (this.selectedTicker && t.name === this.selectedTicker.name) {
+          this.selectedTickerPrice = t.price;
         }
       });
     },
@@ -317,8 +324,7 @@ export default {
       console.log("close");
       this.modalContent = null;
       this.openModal = false;
-      this.handleDelete(this.tickerToRemove);
-      console.log(this.tickerToRemove);
+      //this.handleDelete(this.tickerToRemove);
       this.tickerToRemove = "";
     },
   },
