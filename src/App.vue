@@ -8,13 +8,13 @@
         @close-modal="closeModal"
         :is-open="openModal"
       >
-        <template #actions="{ emit: modalEmit }">
+        <template #actions>
           Enter
           <input placeholder="ticker name" v-model="comfirmationText" />
           &nbsp;
           <button
             class="disabled:opacity-50 bg-blue-300 enabled:hover:bg-gray-500 text-blue-700 font-semibold enabled:hover:text-white py-1 px-4 border border-blue-500 enabled:hover:border-transparent rounded"
-            @click="modalEmit('closeModal')"
+            @click="handleDelete"
             :disabled="!isConfirmedTickerName"
           >
             Ok
@@ -102,7 +102,7 @@
             @click="select(t)"
             :class="{
               'border-2': selectedTicker === t,
-              'bg-red-10    0': t.price === '-',
+              'bg-red-100': t.price === '-',
             }"
             class="bg-white overflow-hidden shadow rounded-lg border-purple-800 border-solid cursor-pointer"
           >
@@ -116,7 +116,7 @@
             </div>
             <div class="w-full border-t border-gray-200"></div>
             <button
-              @click.stop="confirmDelete(t)"
+              @click.stop="showModal(t)"
               class="flex items-center justify-center font-medium w-full bg-gray-100 px-4 py-4 sm:px-6 text-md text-gray-500 hover:text-gray-600 hover:bg-gray-200 hover:opacity-20 transition-all focus:outline-none"
             >
               <svg
@@ -256,23 +256,6 @@ export default {
   },
 
   methods: {
-    confirmDelete(tickerToConfirm) {
-      if (this.openModal) {
-        return;
-      }
-
-      this.comfirmationText = "";
-
-      this.tickerToRemove = tickerToConfirm;
-
-      this.modalContent = {
-        title: "Removed ticker",
-        content: `You want to remove ticker ${tickerToConfirm.name} ?`,
-      };
-
-      this.openModal = true;
-    },
-
     updateTicker(tickerName, price) {
       this.tickers.map((t) => {
         if (t.name === tickerName) {
@@ -308,23 +291,34 @@ export default {
       this.selectedTicker = ticker;
     },
 
-    handleDelete(tickerToRemove) {
-      this.tickers = this.tickers.filter((t) => t !== tickerToRemove);
-      if (this.selectedTicker === tickerToRemove) {
+    handleDelete() {
+      this.tickers = this.tickers.filter((t) => t !== this.tickerToRemove);
+      if (this.selectedTicker === this.tickerToRemove) {
         this.selectedTicker = null;
       }
-      unsubscribeFromTicker(tickerToRemove.name);
+      unsubscribeFromTicker(this.tickerToRemove.name);
+      this.closeModal();
     },
 
     closeGraph() {
       this.selectedTicker = null;
     },
 
+    showModal(tickerToConfirm) {
+      this.tickerToRemove = tickerToConfirm;
+
+      this.modalContent = {
+        title: "Removed ticker",
+        content: `You want to remove ticker ${tickerToConfirm.name} ?`,
+      };
+
+      this.comfirmationText = "";
+
+      this.openModal = true;
+    },
+
     closeModal() {
-      console.log("close");
-      this.modalContent = null;
       this.openModal = false;
-      //this.handleDelete(this.tickerToRemove);
       this.tickerToRemove = "";
     },
   },

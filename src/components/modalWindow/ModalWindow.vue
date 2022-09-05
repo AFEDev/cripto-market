@@ -42,7 +42,7 @@ export default {
   props: {
     modalContent: {
       type: Object,
-      required: true,
+      required: false,
     },
     isOpen: {
       type: Boolean,
