@@ -9,12 +9,6 @@ const INVALID_SUB = "500";
 
 const bc = new BroadcastChannel("test_channel");
 
-// bc.postMessage(tickersHandlers);
-
-// bc.onmessage = (th) => {
-//   tickersHandlers = th;
-// };
-
 socket.addEventListener("message", (e) => {
   let {
     TYPE: type,
@@ -38,6 +32,7 @@ socket.addEventListener("message", (e) => {
   if (currencyTo !== "EUR") {
     newPrice *= BTCpriceInEUR;
   }
+
   bc.postMessage({ currency, newPrice });
 
   const handlers = tickersHandlers.get(currency) ?? [];
@@ -94,6 +89,9 @@ function handleResponseError(e) {
   };
 
   if (sendedParameters.currencyTo === "BTC") {
+    console.log(e.data);
+    const handlers = tickersHandlers.get(sendedParameters.currencyFrom) ?? [];
+    handlers.forEach((fn) => fn("-"));
     return;
   }
 
@@ -141,6 +139,3 @@ export const unsubscribeFromTicker = (ticker) => {
   tickersHandlers.delete(ticker);
   unsubscribeFromTickerOnWs(ticker);
 };
-
-// setInterval(loadTickers, 5000);
-//window.tickers = tickers;

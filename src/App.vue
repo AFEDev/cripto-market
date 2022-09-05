@@ -102,7 +102,7 @@
             @click="select(t)"
             :class="{
               'border-2': selectedTicker === t,
-              'bg-red-100': t.price === '-',
+              'bg-red-200': t.price === '-',
             }"
             class="bg-white overflow-hidden shadow rounded-lg border-purple-800 border-solid cursor-pointer"
           >
@@ -110,8 +110,12 @@
               <dt class="text-sm font-medium text-gray-500 truncate">
                 {{ t.name }} - EUR
               </dt>
-              <dd class="mt-1 text-3xl font-semibold text-gray-900">
-                {{ formatPrice(t.price) }}
+
+              <dd
+                class="mt-1 pt-3 text-3xl font-semibold text-gray-900 text-center grid justify-items-center"
+              >
+                <loading-spinner v-if="t.price === ''" />
+                <p v-else>{{ formatPrice(t.price) }}</p>
               </dd>
             </div>
             <div class="w-full border-t border-gray-200"></div>
@@ -152,6 +156,7 @@
 import AddTicker from "./components/AddTicker.vue";
 import TickerGraph from "./components/TickerGraph.vue";
 import ModalWindow from "./components/modalWindow/ModalWindow.vue";
+import LoadingSpinner from "./components/LoadingSpinner.vue";
 
 import { subscribeToTicker, unsubscribeFromTicker } from "./api";
 
@@ -162,6 +167,7 @@ export default {
     AddTicker,
     TickerGraph,
     ModalWindow,
+    LoadingSpinner,
   },
 
   TICKERS_ON_PAGE: 6,
@@ -277,7 +283,7 @@ export default {
     add(ticker) {
       const currentTicker = {
         name: ticker,
-        price: "-",
+        price: "",
       };
 
       this.tickers = [...this.tickers, currentTicker];

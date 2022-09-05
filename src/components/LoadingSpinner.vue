@@ -1,7 +1,5 @@
 <template>
-  <div
-    class="fixed w-100 h-100 opacity-80 bg-purple-400 inset-0 z-50 flex items-center justify-center"
-  >
+  <div>
     <svg
       class="animate-spin -ml-1 mr-3 h-12 w-12 text-white"
       xmlns="http://www.w3.org/2000/svg"

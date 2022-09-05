@@ -1,6 +1,11 @@
 <template>
   <section>
-    <loading-spinner v-if="loading" />
+    <div
+      v-if="loading"
+      class="fixed w-100 h-100 opacity-80 bg-purple-400 inset-0 z-50 flex items-center justify-center"
+    >
+      <loading-spinner />
+    </div>
     <div class="flex">
       <div class="max-w-xs">
         <label for="wallet" class="block text-sm font-medium text-gray-700"
