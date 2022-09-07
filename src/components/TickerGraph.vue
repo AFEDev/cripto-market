@@ -111,7 +111,6 @@ export default {
 
     updateGraph(price) {
       this.graph.push(price);
-
       while (this.graph.length > this.maxGraphElements) {
         this.graph.shift();
       }
@@ -137,6 +136,9 @@ export default {
     },
     selectedTicker() {
       this.graph.length = 0;
+    },
+    updateGraph() {
+      console.log("graph");
     },
   },
 };

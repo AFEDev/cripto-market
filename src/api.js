@@ -89,7 +89,6 @@ function handleResponseError(e) {
   };
 
   if (sendedParameters.currencyTo === "BTC") {
-    console.log(e.data);
     const handlers = tickersHandlers.get(sendedParameters.currencyFrom) ?? [];
     handlers.forEach((fn) => fn("-"));
     return;

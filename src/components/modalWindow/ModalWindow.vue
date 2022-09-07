@@ -2,7 +2,7 @@
   <div
     v-if="isOpen"
     class="flex items-center justify-center fixed left-0 bottom-0 w-full h-full bg-gray-300 bg-opacity-75 z-10"
-    @click="closeModal"
+    @click="close"
   >
     <div
       class="bg-gray-100 rounded-lg w-3/4 md:w-1/2 border border-blue-500 overflow-hidden"
@@ -10,14 +10,13 @@
     >
       <div class="flex flex-col items-start">
         <div class="flex w-full bg-blue-300 p-2">
-          <div class="text-gray-900 font-medium text-lg">
-            {{ modalContent.title }}
-          </div>
+          <slot name="header"> </slot>
+
           <svg
             class="ml-auto fill-current text-gray-700 w-6 h-6 cursor-pointer"
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 18 18"
-            @click="closeModal"
+            @click="close"
           >
             <path
               d="M14.53 4.53l-1.06-1.06L9 7.94 4.53 3.47 3.47 4.53 7.94 9l-4.47 4.47 1.06 1.06L9 10.06l4.47 4.47 1.06-1.06L10.06 9z"
@@ -25,14 +24,13 @@
           </svg>
         </div>
         <hr />
-        <div class="p-4">
-          {{ modalContent.content }}
-        </div>
+        <slot name="content"> </slot>
+
         <hr />
         <div
           class="flex flex-col justify-around w-full bg-gray-100 p-2 md:flex-row md:mx-auto"
         >
-          <slot name="actions" :closeModal="closeModal"> </slot>
+          <slot name="actions" :close="close" :confirm="confirm"> </slot>
         </div>
       </div>
     </div>
@@ -41,23 +39,10 @@
 
 <script>
 export default {
-  props: {
-    modalContent: {
-      type: Object,
-      required: false,
-    },
-    isOpen: {
-      type: Boolean,
-      required: false,
-    },
-  },
+  currentPopupController: null,
 
-  emits: {
-    closeModal: {
-      type: Boolean,
-      required: false,
-      default: false,
-    },
+  data() {
+    return { isOpen: false };
   },
 
   mounted() {
@@ -75,8 +60,28 @@ export default {
       }
     },
 
-    closeModal() {
-      this.$emit("closeModal");
+    open() {
+      let resolve;
+      let reject;
+      const popupPromise = new Promise((ok, fail) => {
+        resolve = ok;
+        reject = fail;
+      });
+
+      this.$options.currentPopupController = { resolve, reject };
+      this.isOpen = true;
+
+      return popupPromise;
+    },
+
+    close() {
+      this.$options.currentPopupController.resolve(false);
+      this.isOpen = false;
+    },
+
+    confirm() {
+      this.$options.currentPopupController.resolve(true);
+      this.isOpen = false;
     },
   },
 };

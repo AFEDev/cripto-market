@@ -3,12 +3,16 @@
     <div class="container">
       <div class="w-full my-4"></div>
 
-      <ModalWindow
-        :modalContent="modalContent"
-        @close-modal="closeModal"
-        :is-open="openModal"
-      >
-        <template #actions>
+      <modal-window ref="comfirmationModal" :modalContent="modalContent">
+        <template #header>
+          <div class="text-gray-900 font-medium text-lg">Remove ticker</div>
+        </template>
+        <template #content>
+          <div class="p-4">
+            Are you sure that you want delete ticker {{ tickerToRemove.name }}?
+          </div>
+        </template>
+        <template #actions="{ confirm }">
           <p class="pt-1">Enter</p>
           <input
             class="bg-gray-100 border-b-2 border-blue-600 focus:border-transparent"
@@ -18,13 +22,14 @@
           &nbsp;
           <button
             class="disabled:opacity-50 bg-blue-300 enabled:hover:bg-gray-500 text-blue-700 font-semibold enabled:hover:text-white py-1 px-4 border border-blue-500 enabled:hover:border-transparent rounded"
-            @click="handleDelete"
+            @click="confirm"
             :disabled="!isConfirmedTickerName"
           >
             Ok
           </button>
         </template>
-      </ModalWindow>
+      </modal-window>
+
       <add-ticker @add-ticker="add" :tickers="tickers" />
 
       <template v-if="tickers.length">
@@ -74,7 +79,7 @@
               {{ page }} / {{ totalPages }}
             </p>
             <button
-              @click="page = page + 1"
+              @click="page += 1"
               type="button"
               class="disabled:opacity-50 my-4 mx-3 inline-flex items-center py-2 px-2 border border-transparent shadow-sm text-sm leading-4 font-medium rounded-full text-white bg-gray-600 hover:bg-gray-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
               :disabled="page >= totalPages"
@@ -124,7 +129,7 @@
             </div>
             <div class="w-full border-t border-gray-200"></div>
             <button
-              @click.stop="showModal(t)"
+              @click.stop="handleDeleteModal(t)"
               class="flex items-center justify-center font-medium w-full bg-gray-100 px-4 py-4 sm:px-6 text-md text-gray-500 hover:text-gray-600 hover:bg-gray-200 hover:opacity-20 transition-all focus:outline-none"
             >
               <svg
@@ -184,7 +189,6 @@ export default {
       filter: "",
       page: 1,
       modalContent: {},
-      openModal: false,
       comfirmationText: "",
       tickerToRemove: "",
     };
@@ -192,11 +196,6 @@ export default {
 
   emits: {
     closeGraph: {
-      type: Boolean,
-      required: false,
-      default: false,
-    },
-    closeModal: {
       type: Boolean,
       required: false,
       default: false,
@@ -213,7 +212,7 @@ export default {
     }
 
     if (windowData.page) {
-      this.page = windowData.page;
+      this.page = parseInt(windowData.page);
     }
 
     const tickersData = localStorage.getItem("cryptolist");
@@ -307,29 +306,21 @@ export default {
         this.selectedTicker = null;
       }
       unsubscribeFromTicker(this.tickerToRemove.name);
-      this.closeModal();
     },
 
     closeGraph() {
       this.selectedTicker = null;
     },
 
-    showModal(tickerToConfirm) {
-      this.tickerToRemove = tickerToConfirm;
-
-      this.modalContent = {
-        title: "Removed ticker",
-        content: `You want to remove ticker ${tickerToConfirm.name} ?`,
-      };
-
+    async handleDeleteModal(ticker) {
+      this.tickerToRemove = ticker;
       this.comfirmationText = "";
 
-      this.openModal = true;
-    },
+      const modalResult = await this.$refs.comfirmationModal.open();
 
-    closeModal() {
-      this.openModal = false;
-      this.tickerToRemove = "";
+      if (modalResult) {
+        this.handleDelete();
+      }
     },
   },
 
