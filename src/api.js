@@ -19,11 +19,15 @@ socket.addEventListener("message", (e) => {
 
   if (type !== AGGREGATE_INDEX || newPrice === undefined) {
     if (type === INVALID_SUB) {
+      console.log("currency 500", e);
       handleResponseError(e);
       return;
     }
     return;
   }
+
+  console.log("after if", newPrice);
+  console.log("after if", e);
 
   if (currency === "BTC") {
     BTCpriceInEUR = newPrice;
@@ -82,6 +86,8 @@ export const loadAllTickersList = () =>
 
 function handleResponseError(e) {
   const { TYPE: type, PARAMETER: sendedParameter } = JSON.parse(e.data);
+
+  console.log(sendedParameter);
 
   const sendedParameters = {
     currencyTo: sendedParameter.split("~")[3],

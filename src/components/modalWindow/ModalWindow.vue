@@ -1,7 +1,7 @@
 <template>
   <div
     v-if="isOpen"
-    class="flex items-center justify-center fixed left-0 bottom-0 w-full h-full bg-gray-300 bg-opacity-75 z-10"
+    class="flex items-center justify-center fixed left-0 bottom-0 w-full h-full bg-gray-300 bg-opacity-75 z-100"
     @click="close"
   >
     <div

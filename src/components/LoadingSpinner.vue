@@ -1,7 +1,7 @@
 <template>
   <div>
     <svg
-      class="animate-spin -ml-1 mr-3 h-12 w-12 text-white"
+      class="animate-spin -ml-1 mr-3 h-12 w-12 text-black"
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"

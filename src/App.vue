@@ -3,7 +3,7 @@
     <div class="container">
       <div class="w-full my-4"></div>
 
-      <modal-window ref="comfirmationModal" :modalContent="modalContent">
+      <modal-window ref="comfirmationModal">
         <template #header>
           <div class="text-gray-900 font-medium text-lg">Remove ticker</div>
         </template>
@@ -123,8 +123,10 @@
               <dd
                 class="mt-1 pt-3 text-3xl font-semibold text-gray-900 text-center grid justify-items-center"
               >
-                <loading-spinner v-if="t.price === ''" />
-                <p v-else>{{ formatPrice(t.price) }}</p>
+                <loading-spinner v-if="t.price === 0" class="z-50" />
+                <p v-else class="-ml-1 mr-3 h-12 w-12">
+                  {{ formatPrice(t.price) }}
+                </p>
               </dd>
             </div>
             <div class="w-full border-t border-gray-200"></div>
@@ -188,7 +190,6 @@ export default {
       selectedTicker: null,
       filter: "",
       page: 1,
-      modalContent: {},
       comfirmationText: "",
       tickerToRemove: "",
     };
@@ -277,16 +278,18 @@ export default {
     },
 
     formatPrice(price) {
-      if (price === "-") {
+      console.log("formatPrice", price);
+      if (price === "-" || price === undefined) {
         return price;
       }
+
       return price > 1 ? price.toFixed(2) : price.toPrecision(2);
     },
 
     add(ticker) {
       const currentTicker = {
-        name: ticker,
-        price: "",
+        name: ticker.toUpperCase(),
+        price: 0,
       };
 
       this.tickers = [...this.tickers, currentTicker];
